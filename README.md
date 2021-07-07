@@ -12,7 +12,7 @@ This library is based on the 'BMP280 Digital Pressure Sensor Datsheet' V. 1.23.
 
 BMP280 consists of two sensors on one module: temperature and barometric pressure. The barometric pressure value needs to be calibrated and compensated using temperature data, so a reading of temperature must be done prior to a pressure reading.
 
-The BMP280 has three modes of operation (Normal, Forced and Sleep), an optional IIR filter for noisy environments and optional oversampling.
+The BMP280 has three modes of operation (Normal, Forced and Sleep), an optional IIR filter for noisy environments, optional timing in normal mode (continuous reading) and optional oversampling.
 
 It can also be used as an altimeter based on barometric pressure. Two functions are provided for this purpose.
 
