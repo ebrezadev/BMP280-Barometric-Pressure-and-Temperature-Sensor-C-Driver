@@ -22,7 +22,7 @@ An added feature is automatic detection of BMP280 sensors on I2C bus and their a
 
 As mentioned earlier, first thing to do is implementing low level settings inside bmp280_low_level.c which consists of I2C settings, a delay function and math calculations for altitude. In order to use, the first function to call is bmp280_init, which initializes I2C interface, detects BMP280 sensors and their addresses, soft resets and loads them with default settings, reads the non volatile memory of BMP280 and stores their data for temperature and pressure value compensations, and returns the detected addresses.
 
-In the next step, BMP280 settings could be changed using the bmp280_set_all(...) function, as well as mode of operation. Both are optional and not mandatory for a sensor reading, because the module is loaded with default settings through bmp280_init() function.
+In the next step, BMP280 settings could be changed using the bmp280_set(...) function, as well as mode of operation. Both are optional and not mandatory for a sensor reading, because the module is loaded with default settings through bmp280_init() function.
 A full sensors reading could be done with:
 
 **sensors_t bmp280_get_all(uint8_t deviceAddress)**
