@@ -1,6 +1,7 @@
 //Bosch Sensortec BMP280 barometric pressure and temperature sensor
 //example implementation for arduino
 #include "bmp280.h"
+#include "interface.hpp"
 
 bmp280_sensors_data_t sensorsData;
 bmp280_handle_t handle;
