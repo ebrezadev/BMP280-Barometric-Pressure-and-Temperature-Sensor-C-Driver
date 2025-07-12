@@ -1,6 +1,8 @@
 #ifndef __INTERFACE_HPP__
 #define __INTERFACE_HPP__
 
+#include <stdint.h>
+
 int bmp280_i2c_init();
 int bmp280_i2c_deinit();
 int bmp280_read_array(uint8_t deviceAddress, uint8_t startRegisterAddress, uint8_t *data, uint8_t dataLength);
