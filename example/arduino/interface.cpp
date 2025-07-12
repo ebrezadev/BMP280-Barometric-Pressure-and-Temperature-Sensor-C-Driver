@@ -3,6 +3,7 @@
 /*Version 2.0*/
 
 #include "bmp280.h"
+#include "interface.hpp"
 #include <Wire.h>
 #include <math.h>
 
