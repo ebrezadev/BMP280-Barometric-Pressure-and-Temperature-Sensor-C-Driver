@@ -1,4 +1,4 @@
-# BMP280 Barometric Pressure and Temperature Sensor C Driver
+# BMP280 Barometric Pressure and Temperature Sensor C Device Driver (Platform Independent)
 * version 2.0
 * Reza Ebrahimi
 
