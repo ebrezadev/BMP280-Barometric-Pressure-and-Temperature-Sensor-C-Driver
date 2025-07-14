@@ -1,6 +1,33 @@
-/*BMP280 barometric pressure and temperature sensor C Driver*/
-/*Reza Ebrahimi - https://github.com/ebrezadev */
-/*Version 2.0*/
+/**
+* @file	bmp280.c
+* @brief BMP280 barometric pressure and temperature sensor C Driver
+* @author Reza G. Ebrahimi <https://github.com/ebrezadev>
+* @version 3.0
+* @license MIT 
+*
+* MIT License
+* 
+* Copyright (c) 2025 Reza G. Ebrahimi
+* 
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+* 
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+* 
+*/
 
 #include "bmp280.h"
 
@@ -10,7 +37,7 @@
 		{ \
 			return error; \
 		} \
-    } while(0)
+    } while(0) 
 
 /*Static functions are used internally*/
 
@@ -35,16 +62,20 @@ bmp280_error_code_t bmp280_init(
 	bmp280_error_code_t error;
 
 	/*check for NULL handle*/
-	if (handle == NULL)
+	if(handle == NULL)
 	{
 		return ERROR_NULL_HANDLE;
 	}
 
 	/*check for NULL or undefined dependencies*/
-	if (handle->dependency_interface.bmp280_delay_function == NULL ||
+	if(handle->dependency_interface.bmp280_delay_function == NULL ||
 		handle->dependency_interface.bmp280_interface_init == NULL ||
 		handle->dependency_interface.bmp280_interface_deinit == NULL ||
+
+		#if BMP280_INCLUDE_ALTITUDE
 		handle->dependency_interface.bmp280_power_function == NULL ||
+		#endif
+
 		handle->dependency_interface.bmp280_read_array == NULL ||
 		handle->dependency_interface.bmp280_write_array == NULL)
 	{
@@ -52,7 +83,7 @@ bmp280_error_code_t bmp280_init(
 	}
 
 	/*initialize the hardware interface*/
-	if (handle->dependency_interface.bmp280_interface_init() != 0)
+	if(handle->dependency_interface.bmp280_interface_init() != 0)
 	{
 		return ERROR_INTERFACE;
 	}
@@ -60,7 +91,7 @@ bmp280_error_code_t bmp280_init(
 	handle->hardware_interface = hw_interface;
 
 	/*check if the hardware interface is set to I2C*/
-	if (hw_interface == BMP280_I2C)
+	if(hw_interface == BMP280_I2C)
 	{
 		handle->i2c_address = i2c_address;
 	}
@@ -72,33 +103,31 @@ bmp280_error_code_t bmp280_init(
 	/*check if the driver can connect to sensor hardware by checking its ID*/
 	error = bmp280_check_id(handle);
 
-	if (error != ERROR_OK)
+	if(error != ERROR_OK)
 	{
 		handle->i2c_address = I2C_ADDRESS_NONE;
 		return error;
 	}
 
 	error = bmp280_reset(handle);
-
 	CHECK_AND_RETURN_ERROR(error);
-
-	if (handle->dependency_interface.bmp280_delay_function(BMP280_STARTUP_DELAY_IN_MS) != 0)
-	{
-		return ERROR_INTERFACE;
-	}
 
 	error = bmp280_get_calibration(handle);
-
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set(
-		handle,
-		BMP280_MODE_DEFAULT,
-		BMP280_TEMPERATURE_OVERSAMPLING_DEFAULT,
-		BMP280_PRESSURE_OVERSAMPLING_DEFAULT,
-		BMP280_STANDBY_TIME_DEFAULT,
-		BMP280_FILTER_DEFAULT);
+	error = bmp280_set_mode(handle, BMP280_MODE_DEFAULT);
+	CHECK_AND_RETURN_ERROR(error);
 
+	error = bmp280_set_pressure_oversampling(handle, BMP280_PRESSURE_OVERSAMPLING_DEFAULT);
+	CHECK_AND_RETURN_ERROR(error);
+
+	error = bmp280_set_temperature_oversampling(handle, BMP280_TEMPERATURE_OVERSAMPLING_DEFAULT);
+	CHECK_AND_RETURN_ERROR(error);
+
+	error = bmp280_set_standby_time(handle, BMP280_STANDBY_TIME_DEFAULT);
+	CHECK_AND_RETURN_ERROR(error);
+
+	error = bmp280_set_filter_coefficient(handle, BMP280_FILTER_DEFAULT);
 	CHECK_AND_RETURN_ERROR(error);
 
 	handle->poll_timeout_ms = BMP280_MEASURING_POLL_TIMEOUT_IN_MS;
@@ -152,6 +181,11 @@ bmp280_error_code_t bmp280_reset(bmp280_handle_t *handle)
 		return ERROR_INTERFACE;
 	}
 
+	if (handle->dependency_interface.bmp280_delay_function(BMP280_STARTUP_DELAY_IN_MS) != 0)
+	{
+		return ERROR_INTERFACE;
+	}
+
 	handle->operation_mode = MODE_SLEEP;
 
 	return ERROR_OK;
@@ -163,8 +197,12 @@ bmp280_error_code_t bmp280_set_mode(
 	bmp280_operation_mode_t operationMode)
 {
 	bmp280_error_code_t error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONTROL_MEAS, operationMode, BMP280_REGISTER_BIT_MODE, BMP280_REGISTER_FIELD_LENGTH_MODE);
-
 	CHECK_AND_RETURN_ERROR(error);
+
+	if (handle->dependency_interface.bmp280_delay_function(50) != 0)
+	{
+		return ERROR_INTERFACE;
+	}
 
 	handle->operation_mode = operationMode;
 
@@ -176,14 +214,16 @@ bmp280_error_code_t bmp280_set_pressure_oversampling(
 	bmp280_handle_t *handle,
 	bmp280_over_sampling_t osValue)
 {
+	bmp280_operation_mode_t operation_mode = handle->operation_mode;
+
 	/*In order to change configuration, the BMP280 sensor must be in SLEEP mode*/
 	bmp280_error_code_t error = bmp280_set_mode(handle, MODE_SLEEP);
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONTROL_MEAS, osValue, BMP280_REGISTER_BIT_OSRS_P, BMP280_REGISTER_FIELD_LENGTH_OSRS_P);
+	error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONTROL_MEAS, (uint8_t)osValue, BMP280_REGISTER_BIT_OSRS_P, BMP280_REGISTER_FIELD_LENGTH_OSRS_P);
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set_mode(handle, handle->operation_mode);
+	error = bmp280_set_mode(handle, operation_mode);
 	CHECK_AND_RETURN_ERROR(error);
 
 	return ERROR_OK;
@@ -194,13 +234,15 @@ bmp280_error_code_t bmp280_set_temperature_oversampling(
 	bmp280_handle_t *handle,
 	bmp280_over_sampling_t osValue)
 {
+	bmp280_operation_mode_t operation_mode = handle->operation_mode;
+
 	bmp280_error_code_t error = bmp280_set_mode(handle, MODE_SLEEP);
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONTROL_MEAS, osValue, BMP280_REGISTER_BIT_OSRS_T, BMP280_REGISTER_FIELD_LENGTH_OSRS_T);
+	error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONTROL_MEAS, (uint8_t)osValue, BMP280_REGISTER_BIT_OSRS_T, BMP280_REGISTER_FIELD_LENGTH_OSRS_T);
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set_mode(handle, handle->operation_mode);
+	error = bmp280_set_mode(handle, operation_mode);
 	CHECK_AND_RETURN_ERROR(error);
 
 	return ERROR_OK;
@@ -211,13 +253,15 @@ bmp280_error_code_t bmp280_set_standby_time(
 	bmp280_handle_t *handle,
 	bmp280_standby_time_t standbyTime)
 {
+	bmp280_operation_mode_t operation_mode = handle->operation_mode;
+
 	bmp280_error_code_t error = bmp280_set_mode(handle, MODE_SLEEP);
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONFIG, standbyTime, BMP280_REGISTER_BIT_T_SB, BMP280_REGISTER_FIELD_LENGTH_T_SB);
+	error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONFIG, (uint8_t)standbyTime, BMP280_REGISTER_BIT_T_SB, BMP280_REGISTER_FIELD_LENGTH_T_SB);
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set_mode(handle, handle->operation_mode);
+	error = bmp280_set_mode(handle, operation_mode);
 	CHECK_AND_RETURN_ERROR(error);
 
 	return ERROR_OK;
@@ -228,50 +272,15 @@ bmp280_error_code_t bmp280_set_filter_coefficient(
 	bmp280_handle_t *handle,
 	bmp280_iir_filter_t filterCoefficient)
 {
+	bmp280_operation_mode_t operation_mode = handle->operation_mode;
+
 	bmp280_error_code_t error = bmp280_set_mode(handle, MODE_SLEEP);
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONFIG, filterCoefficient, BMP280_REGISTER_BIT_FILTER, BMP280_REGISTER_FIELD_LENGTH_FILTER);
+	error = bmp280_set_bits_in_register(handle, BMP280_REGISTER_ADDRESS_CONFIG, (uint8_t)filterCoefficient, BMP280_REGISTER_BIT_FILTER, BMP280_REGISTER_FIELD_LENGTH_FILTER);
 	CHECK_AND_RETURN_ERROR(error);
 
-	error = bmp280_set_mode(handle, handle->operation_mode);
-	CHECK_AND_RETURN_ERROR(error);
-
-	return ERROR_OK;
-}
-
-/*one function to completely set up bmp280 mode, temperature and pressure oversampling, normal mode stadby time and IIR filter coefficient*/
-bmp280_error_code_t bmp280_set(
-	bmp280_handle_t *handle,
-	bmp280_operation_mode_t operationMode,
-	bmp280_over_sampling_t tempOS,
-	bmp280_over_sampling_t pressureOS,
-	bmp280_standby_time_t standbyTime,
-	bmp280_iir_filter_t filterCoefficient)
-{
-	/*In order to change configuration, the BMP280 sensor must be in SLEEP mode*/
-	bmp280_error_code_t error = bmp280_set_mode(handle, MODE_SLEEP);
-	CHECK_AND_RETURN_ERROR(error);
-
-	if (handle->dependency_interface.bmp280_delay_function(50) != 0)
-	{
-		return ERROR_INTERFACE;
-	}
-
-	error = bmp280_set_pressure_oversampling(handle, pressureOS);
-	CHECK_AND_RETURN_ERROR(error);
-
-	error = bmp280_set_temperature_oversampling(handle, tempOS);
-	CHECK_AND_RETURN_ERROR(error);
-
-	error = bmp280_set_standby_time(handle, standbyTime);
-	CHECK_AND_RETURN_ERROR(error);
-
-	error = bmp280_set_filter_coefficient(handle, filterCoefficient);
-	CHECK_AND_RETURN_ERROR(error);
-
-	/*After configuration, we can change the operation mode*/
-	error = bmp280_set_mode(handle, operationMode);
+	error = bmp280_set_mode(handle, operation_mode);
 	CHECK_AND_RETURN_ERROR(error);
 
 	return ERROR_OK;
@@ -280,7 +289,7 @@ bmp280_error_code_t bmp280_set(
 /*reads temperature value from internal bmp280 registers in centigrade*/
 bmp280_error_code_t bmp280_get_temperature(
 	bmp280_handle_t *handle,
-	int32_t *temperature)
+	float *temperature)
 {
 	int32_t adc_T;
 
@@ -294,7 +303,8 @@ bmp280_error_code_t bmp280_get_temperature(
 	var2 = (((((adc_T >> 4) - ((int32_t)handle->dig.T1)) * ((adc_T >> 4) - ((int32_t)handle->dig.T1))) >> 12) * ((int32_t)handle->dig.T3)) >> 14;
 
 	handle->t_fine = var1 + var2;
-	*temperature = (handle->t_fine * 5 + 128) >> 8;
+	int32_t temp_temperature = (handle->t_fine * 5 + 128) >> 8;
+	*temperature = ((float)temp_temperature) / 100.0;
 
 	return ERROR_OK;
 }
@@ -344,6 +354,7 @@ bmp280_error_code_t bmp280_get_pressure(
 	return ERROR_OK;
 }
 
+#if BMP280_INCLUDE_ALTITUDE
 /*calculates altitude from barometric pressure without temperature as an argument*/
 bmp280_error_code_t bmp280_calculate_altitude_quick(
 	bmp280_handle_t *handle,
@@ -380,7 +391,9 @@ bmp280_error_code_t bmp280_calculate_altitude_hypsometric(
 
 	return ERROR_OK;
 }
+#endif
 
+#if BMP280_INCLUDE_ADDITIONAL_GETTERS
 /*returns a complete set of sensor readings and altitude calculation (quick). if bmp280 is in sleep mode, gets data by setting bmp280 to forced mode then back to sleep mode*/
 bmp280_error_code_t bmp280_get_all(
 	bmp280_handle_t *handle,
@@ -394,19 +407,17 @@ bmp280_error_code_t bmp280_get_all(
 		CHECK_AND_RETURN_ERROR(error);
 	}
 
-	int32_t temp_temperature;
-
-	error = bmp280_get_temperature(handle, &temp_temperature);
+	error = bmp280_get_temperature(handle, &data->temperature);
 	CHECK_AND_RETURN_ERROR(error);
-
-	data->temperature = ((float)temp_temperature) / 100.0;
 
 	error = bmp280_get_pressure(handle, &(data->pressure));
 	CHECK_AND_RETURN_ERROR(error);
 
+	#if BMP280_INCLUDE_ALTITUDE
 	error = bmp280_calculate_altitude_quick(handle, &data->altitude, data->pressure);
 	CHECK_AND_RETURN_ERROR(error);
-
+	#endif
+	
 	return ERROR_OK;
 }
 
@@ -525,11 +536,14 @@ bmp280_error_code_t bmp280_get_filter_coefficient(
 	return ERROR_OK;
 }
 
+#endif
+
 /*raw reading of temperature registers, uncompensated*/
 static bmp280_error_code_t bmp280_raw_temperature_data(bmp280_handle_t *handle, int32_t *raw_data)
 {
 	uint8_t temp[3];
 
+	/*Polling and waiting for new data with a timeout*/
 	for( uint8_t measuring_status = BMP280_MEASURING_IN_PROGRESS; measuring_status == BMP280_MEASURING_IN_PROGRESS; )
 	{
 		bmp280_error_code_t error;
@@ -570,6 +584,7 @@ static bmp280_error_code_t bmp280_raw_pressure_data(bmp280_handle_t *handle, int
 {
 	uint8_t pressure[3];
 
+	/*Polling and waiting for new data with a timeout*/
 	for( uint8_t measuring_status = BMP280_MEASURING_IN_PROGRESS; measuring_status == BMP280_MEASURING_IN_PROGRESS; )
 	{
 		bmp280_error_code_t error;
@@ -613,6 +628,7 @@ static bmp280_error_code_t bmp280_get_calibration(bmp280_handle_t *handle)
 
 	bmp280_error_code_t error;
 
+	/*Getting calibration data byte by byte and saving it to the handle*/
 	error = bmp280_read_calibration_word_unsigned(handle, BMP280_REGISTER_ADDRESS_T1, &result_unsigned);
 	CHECK_AND_RETURN_ERROR(error);
 	handle->dig.T1 = result_unsigned;
@@ -676,6 +692,7 @@ static bmp280_error_code_t bmp280_read_calibration_word_unsigned(
 		return ERROR_INTERFACE;
 	}
 
+	/*Turning two bytes of data in a two byte block of memory */
 	*result = (uint16_t)((((uint16_t)data[1]) << 8) + (uint16_t)data[0]);
 
 	return ERROR_OK;
@@ -693,6 +710,7 @@ static bmp280_error_code_t bmp280_read_calibration_word_signed(
 		return ERROR_INTERFACE;
 	}
 
+	/*Turning two bytes of data in a two byte block of memory */
 	*result = (int16_t)((((int16_t)data[1]) << 8) + (int16_t)data[0]);
 
 	return ERROR_OK;
@@ -709,6 +727,7 @@ static bmp280_error_code_t bmp280_set_bits_in_register(
 	uint8_t currentRegisterValue;
 	uint8_t newRegisterValue;
 
+	/*Reading the register of sensor, changing the needed bits, and transfering the new value to the register*/
 	if (handle->dependency_interface.bmp280_read_array(handle->i2c_address, (uint8_t)registerAddress, &currentRegisterValue, 1) != 0)
 	{
 		return ERROR_INTERFACE;
@@ -740,6 +759,7 @@ static bmp280_error_code_t bmp280_get_bits_in_register(
 		return ERROR_INTERFACE;
 	}
 
+	/*Saves bits in a byte of memory*/
 	registerValue &= ~(((~0) << ((uint8_t)fieldStartBitAddress + (uint8_t)fieldLength)) | (~(~(0) << (uint8_t)fieldStartBitAddress)));
 	*fieldData = registerValue >> (uint8_t)fieldStartBitAddress;
 
