@@ -1,21 +1,51 @@
-/*BMP280 barometric pressure and temperature sensor C Driver*/
-/*Reza Ebrahimi - https://github.com/ebrezadev */
-/*Version 2.0*/
+/**
+* @file	bmp280_definitions.h
+* @brief BMP280 barometric pressure and temperature sensor C Driver
+* @author Reza G. Ebrahimi <https://github.com/ebrezadev>
+* @version 3.0
+
+* @license MIT 
+*
+* MIT License
+* 
+* Copyright (c) 2025 Reza G. Ebrahimi
+* 
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+* 
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+* 
+*/
 
 #ifndef __BMP280_DEFS_H__
 #define __BMP280_DEFS_H__
 
 #ifdef __cplusplus
-	#define NULL 0
-#else
-	#define NULL ((void *)0)
+extern "C" {
 #endif
 
-/*configurable definitions*/
-static const uint16_t BMP280_STARTUP_DELAY_IN_MS = 1000;
-static const uint8_t BMP280_MEASURING_POLL_TIMEOUT_IN_MS = 100; 		/*MAX: 255*/
-static const uint8_t BMP280_MEASURING_POLL_PERIOD_IN_MS = 1; 			/*must not be 0 and must be less than BMP280_MEASURING_POLL_TIMEOUT_IN_MS*/
-/*end of configurable definitions*/
+#include "bmp280_config.h"
+
+#ifndef NULL
+	#ifdef __cplusplus
+		#define NULL 0
+	#else
+		#define NULL ((void *)0)
+	#endif
+#endif
 
 /*constant definitions*/
 static const uint8_t BMP280_DEFAULT_CHIP_ID = 0x58;
@@ -26,6 +56,12 @@ static const uint8_t BMP280_MEASURING_DONE = 0x00;
 
 static const uint32_t SEA_LEVEL_PRESSURE = 101325;
 
+/*data types*/
+
+/**
+ * @brief Register addresses for BMP280
+ * 
+ */
 typedef enum 
 {
 	BMP280_REGISTER_ADDRESS_T1 = 0X88,
@@ -53,6 +89,10 @@ typedef enum
 	BMP280_REGISTER_ADDRESS_TEMPERATURE_XLSB = 0xFC
 } bmp280_register_address_t;
 
+/**
+ * @brief Starting bit addresses of bit-fields in registers in BMP280
+ * 
+ */
 typedef enum
 {
 	BMP280_REGISTER_BIT_IM_UPDATE = 0X00,
@@ -65,6 +105,10 @@ typedef enum
 	BMP280_REGISTER_BIT_T_SB = 0X05
 } bmp280_register_bit_t;
 
+/**
+ * @brief bit-field lengths in BMP280
+ * 
+ */
 typedef enum 
 {
 	BMP280_REGISTER_FIELD_LENGTH_IM_UPDATE = 0X01,
@@ -77,8 +121,9 @@ typedef enum
 	BMP280_REGISTER_FIELD_LENGTH_T_SB = 0X03
 } bmp280_register_field_length_t;
 
-/*end of constant definitions*/
-
+/**
+ * @brief Oversampling rates for temperature and pressure
+ */
 typedef enum
 {
 	OVERSAMPLING_0X = 0X00,
@@ -89,11 +134,20 @@ typedef enum
 	OVERSAMPLING_16X = 0X05
 } bmp280_over_sampling_t;
 
+/**
+ * @brief Possible interfaces for the BMP280 device driver
+ * 
+ */
 typedef enum {
 	BMP280_I2C,
-	BMP280_SPI
+	BMP280_SPI,
+	BMP280_OTHER
 } bmp280_hardware_interface_t;
 
+/**
+ * @brief I2C address used for I2C interface
+ * 
+ */
 typedef enum
 {
 	I2C_ADDRESS_NONE = 0,
@@ -101,6 +155,10 @@ typedef enum
 	I2C_ADDRESS_2 = 0X77
 } bmp280_i2c_address_t;
 
+/**
+ * @brief Standby time period to be used in NORMAL mode
+ * 
+ */
 typedef enum
 {
 	T_STANDBY_500US = 0X00,
@@ -113,6 +171,10 @@ typedef enum
 	T_STANDBY_4S
 } bmp280_standby_time_t;
 
+/**
+ * @brief Possible operation modes of BMP280
+ * 
+ */
 typedef enum
 {
 	MODE_SLEEP = 0x00,
@@ -120,6 +182,10 @@ typedef enum
 	MODE_NORMAL = 0x03
 } bmp280_operation_mode_t;
 
+/**
+ * @brief Possible values for filter coefficient
+ * 
+ */
 typedef enum
 {
 	FILTER_OFF = 0X00,
@@ -129,6 +195,10 @@ typedef enum
 	FILTER_16X
 } bmp280_iir_filter_t;
 
+/**
+ * @brief Struct of calibration parameters unique to each BMP280 sensor
+ * 
+ */
 typedef struct
 {
 	uint16_t T1;
@@ -145,18 +215,144 @@ typedef struct
 	int16_t P9;
 } bmp280_calibration_param_t;
 
-/*This struct is needed for get_all function*/
+/**
+ * @brief Structure needed in case of using bmp280_get_all() function
+ * 
+ */
 typedef struct
 {
 	float temperature;
 	uint32_t pressure;
+	
+	#if BMP280_INCLUDE_ALTITUDE
 	float altitude;
+	#endif
 } bmp280_sensors_data_t;
 
+/*Default values section*/
 static const bmp280_over_sampling_t BMP280_PRESSURE_OVERSAMPLING_DEFAULT = OVERSAMPLING_1X;
 static const bmp280_over_sampling_t BMP280_TEMPERATURE_OVERSAMPLING_DEFAULT = OVERSAMPLING_1X;
 static const bmp280_standby_time_t BMP280_STANDBY_TIME_DEFAULT = T_STANDBY_125MS;
 static const bmp280_iir_filter_t BMP280_FILTER_DEFAULT = FILTER_OFF;
 static const bmp280_operation_mode_t BMP280_MODE_DEFAULT = MODE_SLEEP;
+
+/*Dependency pointers*/
+
+/**
+ * @brief The interface initializer
+ * 
+ * Implements the interface (or optionally chip power) initializer, whether I2c, SPI or test mock.
+ * 
+ * @return Returns 0 for no error
+ * 
+ */
+typedef int (*bmp280_interface_init_fp)(void);
+
+
+/**
+ * @brief The interface de-initializer
+ * 
+ * Implements the interface (or optionally chip power) de-initializer, whether I2c, SPI or test mock.
+ * 
+ * @return Returns 0 for no error
+ * 
+ */
+typedef int (*bmp280_interface_deinit_fp)(void);
+
+
+/**
+ * @brief The delay function
+ * 
+ * Implements a delay function in milliseconds.
+ * 
+ * @return Returns 0 for no error
+ * 
+ */
+typedef int (*bmp280_delay_function_fp)(uint32_t delayMS);
+
+#if BMP280_INCLUDE_ALTITUDE 
+
+/**
+ * @brief The power function
+ * 
+ * Implements a power math function used for altitude calculations.
+ * 
+ * @return Returns 0 for no error
+ * 
+ */
+typedef int (*bmp280_power_function_fp) (float x, float y, float *result);
+
+#endif
+
+/**
+ * @brief The write array function
+ * 
+ * Implements the interface write function
+ * 
+ * @param deviceAddress: Used in case of I2C interface
+ * @param startRegisterAddress: The address of starting register
+ * @param data: Pointer to the array of data
+ * @param dataLength: Length of data array
+ * @return Returns 0 for no error
+ * 
+ */
+typedef int (*bmp280_write_array_fp)(uint8_t deviceAddress, uint8_t startRegisterAddress, uint8_t *data, uint8_t dataLength);
+
+
+/**
+ * @brief The read array function
+ * 
+ * Implements the interface read function
+ * 
+ * @param deviceAddress: Used in case of I2C interface
+ * @param startRegisterAddress: The address of starting register
+ * @param data: Pointer to the array of data
+ * @param dataLength: Length of data array
+ * @return Returns 0 for no error
+ * 
+ */
+typedef int (*bmp280_read_array_fp)(uint8_t deviceAddress, uint8_t startRegisterAddress, uint8_t *data, uint8_t dataLength);
+
+
+/**
+ * @brief The dependency interface structure
+ * 
+ * Please define your interface functions and point these function-pointers to them.
+ * 
+ */
+typedef struct
+{
+	bmp280_interface_init_fp bmp280_interface_init;
+	bmp280_interface_deinit_fp bmp280_interface_deinit;
+	bmp280_delay_function_fp bmp280_delay_function;
+	bmp280_write_array_fp bmp280_write_array;
+	bmp280_read_array_fp bmp280_read_array;
+
+	#if BMP280_INCLUDE_ALTITUDE 
+	bmp280_power_function_fp bmp280_power_function;
+	#endif
+} bmp280_dependency_t;
+
+
+/**
+ * @brief The handle to BMP280 instance
+ * 
+ * The handle to an instance of BMP280 sensor. Please set the correct dependency interface.
+ * 
+ */
+typedef struct
+{
+	bmp280_operation_mode_t operation_mode;
+	bmp280_i2c_address_t i2c_address;
+	bmp280_calibration_param_t dig;
+	int32_t t_fine;
+	uint8_t poll_timeout_ms;
+	bmp280_hardware_interface_t hardware_interface;
+	bmp280_dependency_t dependency_interface;
+} bmp280_handle_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
