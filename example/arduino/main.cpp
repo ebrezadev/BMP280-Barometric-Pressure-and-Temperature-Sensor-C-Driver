@@ -30,7 +30,11 @@ void setup() {
 
   Serial.println("SUCCESS");
   
-  bmp280_set(&handle, MODE_NORMAL, OVERSAMPLING_4X, OVERSAMPLING_16X, T_STANDBY_250MS, FILTER_16X);
+  error = bmp280_set_mode(&handle, MODE_NORMAL);
+  error = bmp280_set_temperature_oversampling(&handle, OVERSAMPLING_4X);
+  error = bmp280_set_pressure_oversampling(&handle, OVERSAMPLING_16X);
+  error = bmp280_set_standby_time(&handle, T_STANDBY_250MS);
+  error = bmp280_set_filter_coefficient(&handle, FILTER_16X);
 }
 
 void loop() {
