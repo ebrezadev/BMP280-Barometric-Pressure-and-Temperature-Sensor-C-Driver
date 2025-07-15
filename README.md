@@ -8,7 +8,7 @@ BMP280 C library abstracts away the internals of the hardware, using high level 
 
 This library is based on the 'BMP280 Digital Pressure Sensor Datsheet' V. 1.23.
 
-## GENERAL INFORMATION
+## General Information
 
 BMP280 consists of two sensors on one module: temperature and barometric pressure. The barometric pressure value needs to be calibrated and compensated using temperature data, so a reading of temperature must be done prior to a pressure reading.
 
@@ -16,24 +16,9 @@ The BMP280 has three modes of operation (Normal, Forced and Sleep), an optional 
 
 It can also be used to calculate altitude based on barometric pressure.
 
-## Thread Safety
+## Mutual Exclusion
 
 In order to avoid race conditions, shared resources must be protected using mutual exclusion. I2C or SPI bus are shared resources and accessing them must be protected. Thread safety must be implemented either in the interface functions or in a gatekeeper RTOS task.
-
-## Version 2.0
-
-There are many design changes to the version 1.0, including:
-- Device driver handle design pattern for unlimited instances of sensors
-- Dependency injection pattern for interface
-- Stateless and reentrant
-- Possible to be used with baremetal, RTOS or under Linux
-- Error handling baked into the driver
-
-## Version 3.0
-
-- Doxygen style comments
-- config file for configurations
-- Altitude calculations and several 'get' functions are now optional
 
 ## HOW TO USE
 
@@ -100,5 +85,18 @@ float altitudeHypsometric;
 
 error = bmp280_calculate_altitude_hypsometric(&BMP280, &altitudeHypsometric, sensorsData.pressure, sensorsData.temperature);
 ```
+## History
 
+### Version 2.0
+There are many design changes to the version 1.0, including:
+- Device driver handle design pattern for unlimited instances of sensors
+- Dependency injection pattern for interface
+- Stateless and reentrant
+- Possible to be used with baremetal, RTOS or under Linux
+- Error handling baked into the driver
+
+### Version 3.0
+- Doxygen style comments
+- config file for configurations
+- Altitude calculations and several 'get' functions are now optional
 
