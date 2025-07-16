@@ -2,7 +2,7 @@
 * @file	bmp280.h
 * @brief BMP280 barometric pressure and temperature sensor C Driver
 * @author Reza G. Ebrahimi <https://github.com/ebrezadev>
-* @version 3.0
+* @version 4.0
 * @license MIT 
 *
 * MIT License

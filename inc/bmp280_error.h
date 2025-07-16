@@ -2,7 +2,7 @@
 * @file	bmp280_error.h
 * @brief BMP280 barometric pressure and temperature sensor C Driver
 * @author Reza G. Ebrahimi <https://github.com/ebrezadev>
-* @version 3.0
+* @version 4.0
 * @license MIT 
 *
 * MIT License
@@ -41,13 +41,15 @@ extern "C" {
  * 
  */
 typedef enum {
-	ERROR_OK = 0,		/*no error*/
-	ERROR_INTERFACE,		/*error in interface*/
-	ERROR_NULL_DEPENDENCY,		/*error in dependency functions*/
-	ERROR_SENSOR_ID,		/*error in sensor ID*/
-	ERROR_NULL_HANDLE,		/*error in null handle pointer*/
-	ERROR_TIMEOUT,		/*error in polling timeout. please select a higher timeout*/
-	ERROR_UNKNOWN		/*unknown error*/
+	BMP280_ERROR_OK = 0,		/*no error*/
+	BMP280_ERROR_INTERFACE,		/*error in interface*/
+	BMP280_ERROR_NULL_INTERFACE,		/*error in dependency functions*/
+	BMP280_ERROR_SENSOR_ID,		/*error in sensor ID*/
+	BMP280_ERROR_NULL_HANDLE,		/*error in null handle pointer*/
+	BMP280_ERROR_TIMEOUT,		/*error in polling timeout. please select a higher timeout*/
+	BMP280_ERROR_EXCLUSION,		/*error in mutex hooks */
+	BMP280_ERROR_NULL_MUTEX_HANDLE,		/*handle to mutex does not exist*/
+	BMP280_ERROR_UNKNOWN		/*unknown error*/
 } bmp280_error_code_t;
 
 #ifdef __cplusplus

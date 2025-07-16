@@ -57,7 +57,7 @@ extern "C" {
 /*macros*/
 #define BMP280_INCLUDE_ALTITUDE	1
 #define BMP280_INCLUDE_ADDITIONAL_GETTERS 1
-#define BMP280_INCLUDE_EXCLUSION_HOOK 1
+#define BMP280_INCLUDE_EXCLUSION_HOOK 0
 
 /*config constants*/
 static const uint16_t BMP280_STARTUP_DELAY_IN_MS = 2000;

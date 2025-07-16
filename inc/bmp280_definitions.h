@@ -2,7 +2,7 @@
 * @file	bmp280_definitions.h
 * @brief BMP280 barometric pressure and temperature sensor C Driver
 * @author Reza G. Ebrahimi <https://github.com/ebrezadev>
-* @version 3.0
+* @version 4.0
 
 * @license MIT 
 *
@@ -314,6 +314,48 @@ typedef int (*bmp280_write_array_fp)(uint8_t deviceAddress, uint8_t startRegiste
 typedef int (*bmp280_read_array_fp)(uint8_t deviceAddress, uint8_t startRegisterAddress, uint8_t *data, uint8_t dataLength);
 
 
+#if BMP280_INCLUDE_EXCLUSION_HOOK
+
+/**
+ * @brief The lock hook
+ * 
+ * Implements the interface mutex lock function
+ * 
+ * @param mutex_handle: The handle to the mutex
+ * @return Returns 0 for no error
+ * 
+ */
+typedef int (*bmp280_interface_lock_fp)(void *mutex_handle);
+
+
+/**
+ * @brief The unlock hook
+ * 
+ * Implements the interface mutex unlock function
+ * 
+ * @param mutex_handle: The handle to the mutex 
+ * @return Returns 0 for no error
+ * 
+ */
+typedef int (*bmp280_interface_unlock_fp)(void *mutex_handle);
+
+
+/**
+ * @brief The interface mutual exclusion hooks
+ * 
+ * A struct of mutex lock and unlock hooks
+ * 
+ */
+typedef struct 
+{
+	bmp280_interface_lock_fp bmp280_interface_lock;
+	bmp280_interface_unlock_fp bmp280_interface_unlock;
+	void *mutex_handle;
+} bmp280_interface_exclusion_t;
+
+#endif
+
+
 /**
  * @brief The dependency interface structure
  * 
@@ -330,6 +372,10 @@ typedef struct
 
 	#if BMP280_INCLUDE_ALTITUDE 
 	bmp280_power_function_fp bmp280_power_function;
+	#endif
+
+	#if BMP280_INCLUDE_EXCLUSION_HOOK
+	bmp280_interface_exclusion_t bmp280_interface_exclusion;
 	#endif
 } bmp280_dependency_t;
 

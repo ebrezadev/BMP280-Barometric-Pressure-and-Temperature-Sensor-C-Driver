@@ -20,7 +20,7 @@ void setup() {
   
   bmp280_error_code_t error = bmp280_init(&handle, BMP280_I2C, I2C_ADDRESS_1);
 
-  if(error != ERROR_OK)
+  if(error != BMP280_ERROR_OK)
   {
     Serial.println("FAIL");
 
@@ -40,7 +40,7 @@ void setup() {
 void loop() {
   bmp280_error_code_t error = bmp280_get_all(&handle, &sensorsData);
 
-  if(error != ERROR_OK)
+  if(error != BMP280_ERROR_OK)
   {
     Serial.println("FAIL");
 

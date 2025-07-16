@@ -1,5 +1,5 @@
 # BMP280 Barometric Pressure and Temperature Sensor C Device Driver (Platform Independent)
-* version 3.0
+* version 4.0
 * Reza Ebrahimi
 
 BMP280 is an absolute barometric pressure sensor especially designed by Bosch Sensortec for mobile applications. It consists of a Piezo-resistive pressure sensing element and a mixed-signal ASIC. The ASIC performs A/D conversions and provides the conversion results and sensor specific compensation data through a digital interface. This library is written in **portable C**, and is **platform independent**. .
@@ -18,7 +18,7 @@ It can also be used to calculate altitude based on barometric pressure.
 
 ## Mutual Exclusion
 
-In order to avoid race conditions, shared resources must be protected using mutual exclusion. I2C or SPI bus are shared resources and accessing them must be protected. Thread safety must be implemented either in the interface functions or in a gatekeeper RTOS task.
+In order to avoid race conditions, shared resources must be protected using mutual exclusion. I2C or SPI bus are shared resources and accessing them must be protected. Mutual exclusion is made possible with lock and unlock hooks (optional).
 
 ## HOW TO USE
 
@@ -26,8 +26,9 @@ Set the config file first:
 ```c
 #define BMP280_INCLUDE_ALTITUDE	1
 #define BMP280_INCLUDE_ADDITIONAL_GETTERS 1
+#define BMP280_INCLUDE_EXCLUSION_HOOK 1
 ```
-If BMP280_INCLUDE_ALTITUDE is not defined, the altitude functions are not included. Same goes for BMP280_INCLUDE_ADDITIONAL_GETTERS. Define a handle:
+Mutex lock and unlock hooks and mutex handle must be provided by application writer if BMP280_INCLUDE_EXCLUSION_HOOK is defined. If BMP280_INCLUDE_ALTITUDE is not defined, the altitude functions are not included. Same goes for BMP280_INCLUDE_ADDITIONAL_GETTERS. Define a handle:
 ```c
 bmp280_handle_t BMP280;
 ```
@@ -100,3 +101,6 @@ There are many design changes to the version 1.0, including:
 - config file for configurations
 - Altitude calculations and several 'get' functions are now optional
 
+### Version 4.0
+- Mutual exclusion is baked in using callback functions
+- Changes to some naming conventions
