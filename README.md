@@ -1,5 +1,5 @@
 # BMP280 Barometric Pressure and Temperature Sensor C Device Driver (Platform Independent)
-* version 4.0
+* version 4.1
 * Reza Ebrahimi
 
 BMP280 is an absolute barometric pressure sensor especially designed by Bosch Sensortec for mobile applications. It consists of a Piezo-resistive pressure sensing element and a mixed-signal ASIC. The ASIC performs A/D conversions and provides the conversion results and sensor specific compensation data through a digital interface. This library is written in **portable C**, and is **platform independent**. .
