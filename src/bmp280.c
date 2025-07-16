@@ -415,6 +415,7 @@ bmp280_error_code_t bmp280_calculate_altitude_quick(
 		return BMP280_ERROR_INTERFACE;
 	}
 
+	
 	*alt = 44307.69396 * (1 - 0.111555816 * temp_result); /*calculating altitude from barometric formula*/
 
 	return BMP280_ERROR_OK;
@@ -428,7 +429,7 @@ bmp280_error_code_t bmp280_calculate_altitude_hypsometric(
 	float ambientTemperatureInC)
 {
 	float temp_result;
-
+	
 	if (handle->dependency_interface.bmp280_power_function((float)SEA_LEVEL_PRESSURE / (float)barometricPressure, (float)1 / 5.257, &temp_result) != 0)
 	{
 		return BMP280_ERROR_INTERFACE;
@@ -590,6 +591,9 @@ static bmp280_error_code_t bmp280_raw_temperature_data(bmp280_handle_t *handle, 
 {
 	uint8_t temp[3];
 
+	/*reset the timeout value before the loop*/
+	handle->poll_timeout_ms = BMP280_MEASURING_POLL_TIMEOUT_IN_MS;
+
 	/*Polling and waiting for new data with a timeout*/
 	for( uint8_t measuring_status = BMP280_MEASURING_IN_PROGRESS; measuring_status == BMP280_MEASURING_IN_PROGRESS; )
 	{
@@ -613,8 +617,7 @@ static bmp280_error_code_t bmp280_raw_temperature_data(bmp280_handle_t *handle, 
 			}
 		}
 	}
-	
-	handle->poll_timeout_ms = BMP280_MEASURING_POLL_TIMEOUT_IN_MS;
+
 
 	BMP280_LOCK(handle);
 	if (handle->dependency_interface.bmp280_read_array(handle->i2c_address, BMP280_REGISTER_ADDRESS_TEMPERATURE_MSB, temp, 3) != 0)
@@ -633,6 +636,9 @@ static bmp280_error_code_t bmp280_raw_temperature_data(bmp280_handle_t *handle, 
 static bmp280_error_code_t bmp280_raw_pressure_data(bmp280_handle_t *handle, int32_t *raw_data)
 {
 	uint8_t pressure[3];
+
+	/*reset the timeout value before the loop*/
+	handle->poll_timeout_ms = BMP280_MEASURING_POLL_TIMEOUT_IN_MS;
 
 	/*Polling and waiting for new data with a timeout*/
 	for( uint8_t measuring_status = BMP280_MEASURING_IN_PROGRESS; measuring_status == BMP280_MEASURING_IN_PROGRESS; )
@@ -789,18 +795,17 @@ static bmp280_error_code_t bmp280_set_bits_in_register(
 	uint8_t newRegisterValue;
 
 	/*Reading the register of sensor, changing the needed bits, and transfering the new value to the register*/
+	/*Hold the lock in the read-modify-write process*/
 	BMP280_LOCK(handle);
 	if (handle->dependency_interface.bmp280_read_array(handle->i2c_address, (uint8_t)registerAddress, &currentRegisterValue, 1) != 0)
 	{
 		BMP280_UNLOCK(handle);
 		return BMP280_ERROR_INTERFACE;
 	}
-	BMP280_UNLOCK(handle);
 
 	currentRegisterValue &= (((~0) << ((uint8_t)fieldStartBitAddress + (uint8_t)fieldLength)) | (~(~(0) << (uint8_t)fieldStartBitAddress)));
 	newRegisterValue = currentRegisterValue | (fieldData << (uint8_t)fieldStartBitAddress);
 
-	BMP280_LOCK(handle);
 	if (handle->dependency_interface.bmp280_write_array(handle->i2c_address, (uint8_t)registerAddress, &newRegisterValue, 1) != 0)
 	{
 		BMP280_UNLOCK(handle);
