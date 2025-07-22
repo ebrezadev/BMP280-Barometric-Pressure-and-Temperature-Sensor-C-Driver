@@ -2,7 +2,7 @@
 * @file	bmp280_config.h
 * @brief BMP280 barometric pressure and temperature sensor C Driver
 * @author Reza G. Ebrahimi <https://github.com/ebrezadev>
-* @version 4.0
+* @version 5.0
 * @Section HOW-TO-USE
 * This is the configuration file for BMP280 device driver. There are
 * 3 config constants and 3 macros.

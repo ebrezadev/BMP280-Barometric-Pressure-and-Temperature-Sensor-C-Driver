@@ -1,9 +1,9 @@
 /*BMP280 barometric pressure and temperature sensor C Driver*/
 /*Reza Ebrahimi - https://github.com/ebrezadev */
-/*Version 2.0*/
+/*Version 5.0*/
 
 #include "bmp280.h"
-#include "interface.hpp"
+#include "interface.h"
 #include <Wire.h>
 #include <math.h>
 

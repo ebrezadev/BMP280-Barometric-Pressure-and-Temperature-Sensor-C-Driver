@@ -1,7 +1,7 @@
 //Bosch Sensortec BMP280 barometric pressure and temperature sensor
 //example implementation for arduino
 #include "bmp280.h"
-#include "interface.hpp"
+#include "interface.h"
 
 bmp280_sensors_data_t sensorsData;
 bmp280_handle_t handle;
@@ -18,7 +18,7 @@ void setup() {
   handle.dependency_interface.bmp280_delay_function = delay_function;
   handle.dependency_interface.bmp280_power_function = power_function;
   
-  bmp280_error_code_t error = bmp280_init(&handle, BMP280_I2C, I2C_ADDRESS_1);
+  bmp280_error_code_t error = bmp280_init(&handle, BMP280_I2C, BMP280_I2C_ADDRESS_1);
 
   if(error != BMP280_ERROR_OK)
   {
@@ -30,11 +30,11 @@ void setup() {
 
   Serial.println("SUCCESS");
   
-  error = bmp280_set_mode(&handle, MODE_NORMAL);
-  error = bmp280_set_temperature_oversampling(&handle, OVERSAMPLING_4X);
-  error = bmp280_set_pressure_oversampling(&handle, OVERSAMPLING_16X);
-  error = bmp280_set_standby_time(&handle, T_STANDBY_250MS);
-  error = bmp280_set_filter_coefficient(&handle, FILTER_16X);
+  error = bmp280_set_mode(&handle, BMP280_MODE_NORMAL);
+  error = bmp280_set_temperature_oversampling(&handle, BMP280_OVERSAMPLING_4X);
+  error = bmp280_set_pressure_oversampling(&handle, BMP280_OVERSAMPLING_16X);
+  error = bmp280_set_standby_time(&handle, BMP280_T_STANDBY_250MS);
+  error = bmp280_set_filter_coefficient(&handle, BMP280_FILTER_16X);
 }
 
 void loop() {
